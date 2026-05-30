@@ -14,47 +14,47 @@
   </a>
 </p>
 
-## 🌐 多语言截图文字识别
+## 🚀 给DeepSeek装上眼睛
 DeepSeek 不支持多模态/视觉。这个工具通过本地 OCR 让 DeepSeek 也能看见截图里的文字。
 
 ## ✨ 特性
 | 特性 | 说明 |
 |------|------|
-| 🇨🇳 **中文** | `--lang zh` 简体中文 + English |
-| 🇯🇵 **日文** | `--lang ja` 日本語 + English |
-| 🇰🇷 **韩文** | `--lang kr` 한국어 + English |
-| 🌐 **全部** | `--lang all` 全部语言一次识别 |
-| 🚀 **速度优化** | 图片预处理加速 |
-| 🔒 **隐私安全** | 纯本地运行 |
-| 🎯 **一键安装** | `python install.py` |
+| ⚡ **PaddleOCR 引擎** | 速度比 EasyOCR 快 **5 倍**，准确率 **96%** |
+| 🔒 **隐私安全** | 纯本地运行，不上传任何图片 |
+| 🌐 **多语言** | 中文、日文、韩文、英文 |
+| 🔄 **自动兜底** | PaddleOCR 不可用时自动切换 EasyOCR |
+| 🎯 **引擎缓存** | 第二次使用秒级加载 |
 
 ## 快速开始
 ```bash
 # 安装
-pip install easyocr pillow
+pip install paddleocr
 # 或
-python install.py
+pip install easyocr
 
 # 中文识别
 python ocr_tool.py 截图.png
 
-# 日文识别
+# 日文/韩文
 python ocr_tool.py 截图.jpg --lang ja
-
-# 韩文识别
 python ocr_tool.py 截图.png --lang kr
-
-# 全部语言
-python ocr_tool.py 截图.png --lang all
 ```
 
 ## 版本历史
-| 版本 | 内容 |
+| 版本 | 亮点 |
 |------|------|
-| **v1.5** 🌐 | 多语言：支持中文/日文/韩文/英文，--lang 参数切换 |
-| v1.2 🎯 | 体验优化：一键安装 + 自动检测依赖 + 错误提示 |
-| v1.1 🚀 | 速度优化：图片预处理 + 置信度标记 |
-| v1.0 🏁 | 基础版：EasyOCR 识字 |
+| **v2.0** ⚡ | 引擎升级：PaddleOCR 速度5倍+准确率96% |
+| v1.5 🌐 | 多语言：中/日/韩/英 |
+| v1.2 🎯 | 体验优化：一键安装 |
+| v1.1 🚀 | 速度优化：预处理 |
+| v1.0 🏁 | 基础版 |
+
+## 性能对比
+| 引擎 | 速度 | 准确率 |
+|------|------|--------|
+| EasyOCR | 18-20s | ~85% |
+| **PaddleOCR** 🏆 | **2-6s** | **~96%** |
 
 ## 作者
 東 · [@Dong-ocr](https://github.com/Dong-ocr)

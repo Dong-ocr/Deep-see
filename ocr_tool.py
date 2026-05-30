@@ -1,23 +1,69 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-deep-see OCR 工具 —— 给DeepSeek装上眼睛
-优化版：图片预处理 + 智能参数 + 结构化输出
+deep-see OCR 工具 —— 给DeepSeek装上眼睛 👀
+v1.2 — 体验优化版
+  ✅ 自动检测依赖
+  ✅ 图片预处理加速
+  ✅ 友好错误提示
+  ✅ 置信度标记输出
 """
-
-import warnings
-warnings.filterwarnings("ignore")
 
 import sys
 import os
 import time
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+import importlib
 
-def preprocess_image(img_path: str) -> str:
-    """图片预处理：缩放 + 灰度 + 增强对比度 + 锐化"""
-    img = Image.open(img_path).convert("RGB")
+# ============================================================
+# 第一步：检测依赖
+# ============================================================
+def check_dependencies():
+    required = {
+        "easyocr": "easyocr",
+        "PIL": "pillow",
+    }
+    missing = []
+    for mod, pip_name in required.items():
+        try:
+            importlib.import_module(mod)
+        except ImportError:
+            missing.append(pip_name)
     
-    # 1. 智能缩放 —— 最大边不超过 1920px，减少计算量
+    if missing:
+        print("=" * 50)
+        print("  ❌ 缺少依赖，请先安装：")
+        for m in missing:
+            print(f"     pip install {m}")
+        print()
+        print("  💡 或者直接运行安装脚本：")
+        print("     python install.py")
+        print("=" * 50)
+        sys.exit(1)
+
+check_dependencies()
+
+import warnings
+warnings.filterwarnings("ignore")
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+import easyocr
+
+# ============================================================
+# 第二步：图片预处理
+# ============================================================
+def preprocess_image(img_path: str) -> tuple:
+    if not os.path.exists(img_path):
+        print(f"❌ 文件不存在: {img_path}")
+        print("💡 请检查图片路径是否正确")
+        sys.exit(1)
+    
+    try:
+        img = Image.open(img_path).convert("RGB")
+    except Exception as e:
+        print(f"❌ 无法打开图片: {e}")
+        print("💡 支持的格式：PNG、JPG、JPEG、BMP、WEBP")
+        sys.exit(1)
+    
+    orig_size = img.size
     max_dim = 1920
     if max(img.size) > max_dim:
         ratio = max_dim / max(img.size)
@@ -26,110 +72,128 @@ def preprocess_image(img_path: str) -> str:
             Image.LANCZOS,
         )
     
-    # 2. 转灰度（OCR 不需要颜色信息）
     img = img.convert("L")
-    
-    # 3. 增强对比度 —— 让文字更清晰
     img = ImageEnhance.Contrast(img).enhance(1.8)
-    
-    # 4. 锐化 —— 边缘更清晰
     img = img.filter(ImageFilter.SHARPEN)
     img = img.filter(ImageFilter.SHARPEN)
-    
-    # 5. 反向增强（文字背景分离）
     img = ImageOps.autocontrast(img, cutoff=3)
     
     saved_path = img_path + "_enhanced.png"
     img.save(saved_path)
-    return saved_path
+    return saved_path, orig_size
 
-
+# ============================================================
+# 第三步：OCR 识别
+# ============================================================
 def run_ocr(img_path: str) -> list:
-    """运行 EasyOCR，返回识别结果"""
-    import easyocr
-
-    reader = easyocr.Reader(
-        ["ch_sim", "en"],
-        gpu=False,
-        verbose=False,
-    )
+    print("   🔄 加载OCR引擎...", end=" ", flush=True)
+    try:
+        reader = easyocr.Reader(["ch_sim", "en"], gpu=False, verbose=False)
+        print("✅")
+    except Exception as e:
+        print(f"\n❌ OCR引擎加载失败: {e}")
+        print("💡 请检查网络连接，首次需要下载模型")
+        sys.exit(1)
     
-    result = reader.readtext(
-        img_path,
-        detail=1,  # 返回详细信息（位置 + 置信度）
-        paragraph=True,
-        min_size=10,
-        text_threshold=0.7,
-        low_text=0.4,
-        width_ths=0.7,
-    )
-    return result
+    print("   🔍 识别中...", end=" ", flush=True)
+    try:
+        # detail=1 返回 (bbox, text, conf) 元组
+        result = reader.readtext(
+            img_path, detail=1, paragraph=False,
+            min_size=10, text_threshold=0.7, low_text=0.4, width_ths=0.7,
+        )
+        print("✅")
+        return result
+    except Exception as e:
+        print(f"\n❌ 识别失败: {e}")
+        sys.exit(1)
 
-
-def format_output(results: list, elapsed: float) -> str:
-    """格式化输出结果"""
+# ============================================================
+# 第四步：格式化输出
+# ============================================================
+def format_output(results: list, elapsed: float, orig_size: tuple):
     if not results:
-        return "⚠️ 未识别到文字"
+        print("\n⚠️  未识别到文字")
+        print("💡 可能的原因：")
+        print("   • 图片中没有文字")
+        print("   • 文字太小或太模糊")
+        return
     
     lines = []
-    total_conf = 0
+    total_conf = 0.0
     
     for item in results:
-        if isinstance(item, tuple) and len(item) == 3:
+        if isinstance(item, (list, tuple)) and len(item) == 3:
             bbox, text, conf = item
+            conf = float(conf)
             total_conf += conf
-            lines.append((conf, text))
-        elif isinstance(item, str):
-            lines.append((1.0, item))
+            lines.append((conf, text.strip()))
+    
+    if not lines:
+        lines = [(1.0, str(item)) for item in results]
     
     avg_conf = total_conf / len(lines) if lines else 0
     
-    output = []
-    output.append(f"📝 识别到 {len(lines)} 段文字（耗时 {elapsed:.1f}s，平均置信度 {avg_conf:.0%}）")
-    output.append("")
-    output.append("─── 识别结果 ───")
+    print()
+    print(f"📝 共识别 {len(lines)} 段文字")
+    print(f"⏱  耗时 {elapsed:.1f} 秒 | 📐 原图 {orig_size[0]}×{orig_size[1]}")
+    print(f"📊 平均置信度 {avg_conf:.0%}")
+    print()
+    print("─── 识别结果 ──────────────────────")
     
     for conf, text in lines:
-        conf_mark = "✅" if conf > 0.8 else ("⚠️" if conf > 0.5 else "❌")
-        output.append(f"{conf_mark} {text}")
+        if not text:
+            continue
+        if conf > 0.8:
+            mark = "✅"
+        elif conf > 0.5:
+            mark = "⚠️"
+        else:
+            mark = "❌"
+        print(f"  {mark} {text}")
     
-    output.append("─── 识别完毕 ───")
-    return "\n".join(output)
+    print("────────────────────────────────────")
+    print()
 
-
+# ============================================================
+# 主入口
+# ============================================================
 def main():
+    print()
+    print("  👀 deep-see v1.2 — 给DeepSeek装上眼睛")
+    print()
+    
     if len(sys.argv) < 2:
-        print("用法: python ocr_tool.py <图片路径>")
+        print("=" * 50)
+        print("  📖 用法：")
+        print("    python ocr_tool.py <图片路径>")
+        print()
+        print("  📝 示例：")
+        print('    python ocr_tool.py "截图.png"')
+        print('    python ocr_tool.py "C:\\Users\\截图.jpg"')
+        print("=" * 50)
         sys.exit(1)
     
     img_path = sys.argv[1]
-    
-    if not os.path.exists(img_path):
-        print(f"❌ 文件不存在: {img_path}")
-        sys.exit(1)
-    
     start = time.time()
     
-    # 1. 预处理
-    print("🔄 预处理图片...", end=" ", flush=True)
-    pre_path = preprocess_image(img_path)
-    print("✅")
+    print("  📐 预处理图片...", end=" ", flush=True)
+    try:
+        pre_path, orig_size = preprocess_image(img_path)
+        print("✅")
+    except Exception as e:
+        print(f"\n❌ {e}")
+        sys.exit(1)
     
-    # 2. OCR 识别
-    print("🔄 OCR 识别中...", end=" ", flush=True)
     results = run_ocr(pre_path)
     elapsed = time.time() - start
-    print("✅")
     
-    # 3. 输出结果
-    print(format_output(results, elapsed))
+    format_output(results, elapsed, orig_size)
     
-    # 4. 清理临时文件
     try:
         os.remove(pre_path)
     except:
         pass
-
 
 if __name__ == "__main__":
     main()

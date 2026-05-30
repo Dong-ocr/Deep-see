@@ -14,46 +14,47 @@
   </a>
 </p>
 
-## 这是什么
-DeepSeek 不支持多模态/视觉。这个 Codex skill 通过本地 OCR 让 DeepSeek 也能看见截图里的文字。
+## 🌐 多语言截图文字识别
+DeepSeek 不支持多模态/视觉。这个工具通过本地 OCR 让 DeepSeek 也能看见截图里的文字。
 
 ## ✨ 特性
 | 特性 | 说明 |
 |------|------|
-| 🚀 **速度优化** | 图片预处理（缩放+灰度+增强+锐化），识别更快更准 |
-| 🔒 **隐私安全** | 纯本地运行，不上传任何图片 |
-| 🌐 **中英双语** | 同时支持中文和英文识别 |
-| 📊 **智能输出** | 置信度标记 ✅⚠️❌ + 耗时显示 |
-| 📦 **离线可用** | 首次安装后无需联网 |
-| 🎯 **一键安装** | `python install.py` 自动检测+安装依赖 |
+| 🇨🇳 **中文** | `--lang zh` 简体中文 + English |
+| 🇯🇵 **日文** | `--lang ja` 日本語 + English |
+| 🇰🇷 **韩文** | `--lang kr` 한국어 + English |
+| 🌐 **全部** | `--lang all` 全部语言一次识别 |
+| 🚀 **速度优化** | 图片预处理加速 |
+| 🔒 **隐私安全** | 纯本地运行 |
+| 🎯 **一键安装** | `python install.py` |
 
 ## 快速开始
-
 ```bash
-# 1. 安装依赖
+# 安装
 pip install easyocr pillow
+# 或
+python install.py
 
-# 2. 识别截图
+# 中文识别
 python ocr_tool.py 截图.png
-```
 
-## 文件结构
-```
-deep-see/
-├── ocr_tool.py     # OCR 识别工具（核心）
-├── install.py      # 一键安装脚本
-├── SKILL.md        # Codex skill 定义
-├── README.md       # 项目说明
-├── promo.html      # 宣传卡片
-└── LICENSE         # MIT 协议
+# 日文识别
+python ocr_tool.py 截图.jpg --lang ja
+
+# 韩文识别
+python ocr_tool.py 截图.png --lang kr
+
+# 全部语言
+python ocr_tool.py 截图.png --lang all
 ```
 
 ## 版本历史
 | 版本 | 内容 |
 |------|------|
-| v1.2 | 体验优化：自动检测依赖、一键安装、友好错误提示 |
-| v1.1 | 速度优化：图片预处理 + 置信度标记 + 结构化输出 |
-| v1.0 | 基础版：EasyOCR 识别截图文字 |
+| **v1.5** 🌐 | 多语言：支持中文/日文/韩文/英文，--lang 参数切换 |
+| v1.2 🎯 | 体验优化：一键安装 + 自动检测依赖 + 错误提示 |
+| v1.1 🚀 | 速度优化：图片预处理 + 置信度标记 |
+| v1.0 🏁 | 基础版：EasyOCR 识字 |
 
 ## 作者
 東 · [@Dong-ocr](https://github.com/Dong-ocr)

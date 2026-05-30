@@ -17,3 +17,8 @@ pip install easyocr
 
 ## 作者
 東
+
+## License
+MIT License
+
+Copyright (c) 2026 東
